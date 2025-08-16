@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Flatland Viewer</title>
+  <style>
+    body { text-align: center; font-family: sans-serif; }
+    canvas { border: 1px solid #ccc; margin-bottom: 1em; }
+    #feedback { margin-top: 1em; }
+  </style>
+</head>
+<body>
+  <h1>Guess the Flatland Creature</h1>
+  <canvas id="creature" width="400" height="400"></canvas>
+  <div>
+    <input type="number" id="guess" min="3" max="10" placeholder="3-10" />
+    <button id="submit">Guess</button>
+  </div>
+  <div id="feedback"></div>
+  <script src="game.js"></script>
+</body>
+</html>
