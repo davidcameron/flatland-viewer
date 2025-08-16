@@ -32,7 +32,7 @@ function drawCreature() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.lineWidth = 40; // five times thicker line
-  ctx.lineCap = 'round';
+  ctx.lineCap = 'butt'; // flat line ends for vertical edges
 
   const rotated = points.map(p => ({
     x: p.x * Math.cos(rotation) - p.y * Math.sin(rotation),
@@ -68,7 +68,7 @@ function animate(timestamp) {
   if (!lastTime) lastTime = timestamp;
   const delta = (timestamp - lastTime) / 1000; // seconds
   lastTime = timestamp;
-  rotation += delta * 2 * Math.PI; // one rotation per second
+  rotation += delta * 2 * Math.PI / 10; // one rotation every ten seconds
   drawCreature();
   requestAnimationFrame(animate);
 }
