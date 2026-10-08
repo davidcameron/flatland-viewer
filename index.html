@@ -1,22 +1,165 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Flatland Viewer</title>
-  <style>
-    body { text-align: center; font-family: sans-serif; }
-    canvas { border: 1px solid #ccc; margin-bottom: 1em; }
-    #feedback { margin-top: 1em; }
-  </style>
-</head>
-<body>
-  <h1>Guess the Flatland Creature</h1>
-  <canvas id="creature" width="400" height="400"></canvas>
-  <div>
-    <input type="number" id="guess" min="3" max="10" placeholder="3-10" />
-    <button id="submit">Guess</button>
-  </div>
-  <div id="feedback"></div>
-  <script src="game.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#111d25" />
+    <title>Riverbound</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@500;600;700;800&display=swap');
+
+      :root {
+        color-scheme: dark;
+        --ink: #eef4e7;
+        --muted: #9cad9f;
+        --gold: #efbd65;
+        --panel: rgba(11, 24, 30, .82);
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body { height: 100%; }
+
+      body {
+        margin: 0;
+        overflow: hidden;
+        color: var(--ink);
+        background: #111d25;
+        font-family: Manrope, system-ui, sans-serif;
+      }
+
+      canvas {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .topbar {
+        position: fixed;
+        z-index: 2;
+        top: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        padding: clamp(20px, 4vw, 42px);
+        pointer-events: none;
+      }
+
+      .brand { display: flex; align-items: center; gap: 13px; }
+      .brand-mark {
+        width: 31px;
+        height: 31px;
+        border: 1px solid rgba(238, 244, 231, .45);
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        color: var(--gold);
+        font-size: 16px;
+      }
+      .eyebrow {
+        margin: 0 0 4px;
+        color: var(--muted);
+        font: 500 9px/1 DM Mono, monospace;
+        letter-spacing: .28em;
+        text-transform: uppercase;
+      }
+      h1 { margin: 0; font-size: 19px; line-height: 1; letter-spacing: -.04em; }
+
+      .stats { display: flex; gap: clamp(18px, 4vw, 54px); text-align: right; }
+      .stat span {
+        display: block;
+        color: var(--muted);
+        font: 500 9px/1 DM Mono, monospace;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+      }
+      .stat strong { display: block; margin-top: 8px; font-size: 17px; font-weight: 600; }
+
+      .intro {
+        position: fixed;
+        z-index: 3;
+        left: 50%;
+        bottom: clamp(28px, 7vh, 72px);
+        width: min(560px, calc(100vw - 32px));
+        padding: 24px 28px;
+        transform: translateX(-50%);
+        border: 1px solid rgba(238, 244, 231, .15);
+        border-radius: 18px;
+        background: var(--panel);
+        box-shadow: 0 22px 60px rgba(0, 0, 0, .28);
+        backdrop-filter: blur(16px);
+        text-align: center;
+        transition: opacity .35s, transform .35s;
+      }
+      .intro.hidden { opacity: 0; transform: translate(-50%, 18px); pointer-events: none; }
+      .intro h2 { margin: 0 0 6px; font-size: clamp(21px, 4vw, 28px); letter-spacing: -.04em; }
+      .intro p { margin: 0; color: var(--muted); font-size: 13px; }
+      .keys { display: flex; align-items: center; justify-content: center; gap: 11px; margin-top: 18px; }
+      .key {
+        min-width: 53px;
+        padding: 10px 14px;
+        border: 1px solid rgba(238, 244, 231, .22);
+        border-bottom-width: 3px;
+        border-radius: 9px;
+        background: rgba(255, 255, 255, .055);
+        color: var(--ink);
+        font: 600 17px/1 DM Mono, monospace;
+        cursor: pointer;
+        user-select: none;
+      }
+      .key:active, .key.active { transform: translateY(2px); border-bottom-width: 1px; background: rgba(239, 189, 101, .16); }
+      .keys small { color: #6f8279; font: 500 9px DM Mono, monospace; letter-spacing: .12em; }
+
+      .hint {
+        position: fixed;
+        z-index: 2;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: rgba(238, 244, 231, .58);
+        font: 500 9px DM Mono, monospace;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        opacity: 0;
+        transition: opacity .5s;
+      }
+      .hint.visible { opacity: 1; }
+
+      @media (max-width: 600px) {
+        .topbar { padding: 18px; }
+        .stat:first-child { display: none; }
+        .intro { padding: 20px 18px; }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="river" aria-label="Top-down canoe paddling game"></canvas>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">⌁</div>
+        <div><p class="eyebrow">A quiet passage</p><h1>Riverbound</h1></div>
+      </div>
+      <div class="stats" aria-live="polite">
+        <div class="stat"><span>Current</span><strong id="pace">0.0 kn</strong></div>
+        <div class="stat"><span>Distance</span><strong id="distance">0 m</strong></div>
+      </div>
+    </header>
+
+    <section class="intro" id="intro">
+      <h2>Find your rhythm.</h2>
+      <p>Alternate strokes to keep your canoe straight and moving.</p>
+      <div class="keys">
+        <button class="key" id="leftKey" aria-label="Paddle on the left">←</button>
+        <small>LEFT &nbsp; / &nbsp; RIGHT</small>
+        <button class="key" id="rightKey" aria-label="Paddle on the right">→</button>
+      </div>
+    </section>
+    <div class="hint" id="hint">Alternate arrow keys to paddle · R to restart</div>
+    <script src="game.js"></script>
+  </body>
 </html>
